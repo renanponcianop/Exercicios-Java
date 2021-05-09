@@ -5,7 +5,7 @@ public enum Marca {
     CHEVROLET,
     HYUNDAI,
     VOLKSWAGEN,
-    FORDKA,
+    FORD,
     FIAT,
     RENAULT,
     BMW,

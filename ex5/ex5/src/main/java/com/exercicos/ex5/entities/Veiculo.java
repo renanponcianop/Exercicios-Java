@@ -50,7 +50,7 @@ public class Veiculo {
     public Veiculo(Integer id, String veiculo, String marca, Integer ano, String descricao, Boolean vendido, Date created, Date updated) {
         this.id = id;
         this.veiculo = veiculo;
-        this.marca = marca.toLowerCase();
+        this.marca = capitalizeString(marca);
         this.ano = ano;
         this.descricao = descricao;
         this.vendido = vendido;
@@ -61,12 +61,17 @@ public class Veiculo {
     public Veiculo(VeiculoDTO dto){
         this.id = dto.getId();
         this.veiculo = dto.getVeiculo();
-        this.marca = dto.getMarca().toLowerCase();
+        this.marca = capitalizeString(dto.getMarca());
         this.ano = dto.getAno();
         this.descricao = dto.getDescricao();
         this.vendido = dto.getVendido();
         this.created = dto.getCreated();
         this.updated = dto.getUpdated();
+    }
+
+    public String capitalizeString(String str){
+        str = str.toLowerCase();
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     public Integer getId() {
