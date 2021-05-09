@@ -1,33 +1,60 @@
 package com.exercicos.ex5.services;
 
 import com.exercicos.ex5.entities.Veiculo;
+import com.exercicos.ex5.repositories.VeiculoRepository;
 import com.exercicos.ex5.services.exceptions.MarcaNotFoundException;
-import com.exercicos.ex5.services.exceptions.ObjectNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doReturn;
 
 
 @SpringBootTest
 public class VeiculoServiceTest {
 
-    @Autowired
+    @Mock
+    VeiculoRepository veiculoRepository;
+
+    @InjectMocks
     private VeiculoService veiculoService;
+
+    public List<Veiculo> listVeiculos = new ArrayList<Veiculo>();
+
+    @BeforeEach
+    public void setUp() {
+        listVeiculos.clear();
+        Veiculo v1 = new Veiculo(1,"Model 3", "Tesla", 2021, "Carro elétrico da marca Tesla", false);
+        listVeiculos.add(v1);
+        Veiculo v2 = new Veiculo(2,"Model X", "Tesla", 2019, "Carro elétrico da marca Tesla", false);
+        listVeiculos.add(v2);
+        Veiculo v3 = new Veiculo(3,"Model Y", "Tesla", 2020, "Carro elétrico da marca Tesla", true);
+        listVeiculos.add(v3);
+        Veiculo v4 = new Veiculo(4,"Model S", "Tesla", 2019, "Carro elétrico da marca Tesla", true);
+        listVeiculos.add(v4);
+    }
+
 
     @Test
     public void testSave() {
+        doReturn(listVeiculos).when(veiculoRepository).findAll();
+
         //confirma quantos carros tem pré adicao
         List<Veiculo> carrosPreAdicao = veiculoService.findAll();
         assertEquals(4, carrosPreAdicao.size());
 
-        Veiculo v1 = new Veiculo(null,"Argo", "Fiat", 2021, "Carro Subcompacto", false);
+        Veiculo v1 = new Veiculo(5,"Argo", "Fiat", 2021, "Carro Subcompacto", false);
+
+        doReturn(Optional.of(v1)).when(veiculoRepository).findById(5);
+        listVeiculos.add(v1);
 
         Veiculo inserted = veiculoService.insert(v1);
 
@@ -45,93 +72,69 @@ public class VeiculoServiceTest {
 
         assertEquals("Argo",veiculoInserido.getVeiculo());
         assertEquals("Fiat",veiculoInserido.getMarca());
-
-        // Deletar o objeto
-        veiculoService.delete(id);
-
-        // Verificar se deletou
-        try {
-            veiculoService.find(id);
-            fail("O carro não foi excluído");
-        } catch (ObjectNotFoundException e) {
-            // OK
-        }
-        //confirma quantos carros tem salvo
-        List<Veiculo> carrosPosExclusao = veiculoService.findAll();
-        assertEquals(4, carrosPosExclusao.size());
     }
 
     @Test
     public void testLista() {
+        doReturn(listVeiculos).when(veiculoRepository).findAll();
         List<Veiculo> carros = veiculoService.findAll();
         assertEquals(4, carros.size());
+    }
+
+    @Test
+    public void testDeleteCheckMetod() {
+        doReturn(Optional.of(listVeiculos.get(0))).when(veiculoRepository).findById(1);
+        veiculoService.delete(1);
+        Mockito.verify(veiculoRepository, Mockito.times(1)).deleteById(1);
     }
 
     @Test
     public void testSearchVariacoesDeFiltros() throws ParseException {
         //teste Search vendidos
         List<Veiculo> carrosvendidos = veiculoService.search(true,null,null,null);
-        assertEquals(2, carrosvendidos.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(true,null,null,null);
 
         //teste Search disponível para venda
         List<Veiculo> carrosdisponíveis = veiculoService.search(false,null,null,null);
-        assertEquals(2, carrosdisponíveis.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(false,null,null,null);
 
         //teste search por decada
         List<Veiculo> carros2010 = veiculoService.search(null,2010,null,null);
-        assertEquals(2, carros2010.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(null,2010,null,null);
 
         //teste Search por decada disponível para venda
         List<Veiculo> carros2010Vendido = veiculoService.search(false,2010,null,null);
-        assertEquals(1, carros2010Vendido.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(false,2010,null,null);
 
         //teste Search por decada vendido
         List<Veiculo> carros2010Disponível = veiculoService.search(true,2010,null,null);
-        assertEquals(1, carros2010Disponível.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(true,2010,null,null);
 
         //teste Search com marca existente
         List<Veiculo> carrosTesla = veiculoService.search(null,null,"Tesla",null);
-        assertEquals(4, carrosTesla.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(null,null,"Tesla",null);
 
         //teste Search com marca que não existe
         List<Veiculo> carrosQueNaoTemCarro = veiculoService.search(null,null,"Marca que nao tem carro",null);
-        assertEquals(0, carrosQueNaoTemCarro.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(null,null,"Marca que nao tem carro",null);
 
         //teste Search buscando os mais recentes cadastrados
         List<Veiculo> carrosRecentes = veiculoService.search(null,null,null,true);
-        assertEquals(4, carrosRecentes.size());
-
-        Veiculo v3 = veiculoService.find(3);
-        Veiculo v4 = veiculoService.find(4);
-        Date date1 = new SimpleDateFormat("dd/MM/yyyy").parse("01/03/2021");
-        Date dataAtualv3 = v3.getCreated();
-        Date dataAtualv4 = v4.getCreated();
-        v3.setCreated(date1);
-        v4.setCreated(date1);
-        veiculoService.update(v3);
-        veiculoService.update(v4);
-
-        //teste Search buscando os mais recentes cadastrados só que após jogar 2 paradatas retrasadas
-        List<Veiculo> carrosRecentesPosAlteracao = veiculoService.search(null,null,null,true);
-        assertEquals(2, carrosRecentesPosAlteracao.size());
-
-        v3.setCreated(dataAtualv3);
-        v4.setCreated(dataAtualv4);
-        veiculoService.update(v3);
-        veiculoService.update(v4);
-        //teste Search buscando os mais recentes voltando as datas dos alterados
-        List<Veiculo> carrosRecentesDataAtual = veiculoService.search(null,null,null,true);
-        assertEquals(4, carrosRecentesDataAtual.size());
+        Mockito.verify(veiculoRepository, Mockito.times(1)).findByFilters(null,null,null,true);
     }
 
     @Test
     public void testFindAndValidateSpecificCar() {
+        doReturn(Optional.of(listVeiculos.get(0))).when(veiculoRepository).findById(1);
         Veiculo expected = veiculoService.find(1);
         assertEquals("Model 3",expected.getVeiculo());
         assertEquals("Tesla",expected.getMarca());
         assertEquals(2021,expected.getAno());
         assertEquals("Carro elétrico da marca Tesla",expected.getDescricao());
         assertEquals(false,expected.getVendido());
+
+        Veiculo v1 = new Veiculo(1,"Model 3", "Tesla", 2021, "Carro elétrico da marca Tesla", true);
+        doReturn(Optional.of(v1)).when(veiculoRepository).findById(1);
 
         expected.setVendido(true);
         veiculoService.update(expected);
@@ -144,23 +147,19 @@ public class VeiculoServiceTest {
         //voltando ao padrão
         expected.setVendido(false);
         veiculoService.update(expected);
+        Mockito.verify(veiculoRepository, Mockito.times(2)).save(expected);
     }
 
     @Test
-    public void testUpdateFailed() {
+    public void testUpdateFailed() throws Exception  {
+        doReturn(Optional.of(listVeiculos.get(0))).when(veiculoRepository).findById(1);
         Veiculo expectedErrado = veiculoService.find(1);
 
         expectedErrado.setMarca("marcaqualquernaoregistrada");
         try{
             veiculoService.update(expectedErrado);
         } catch (MarcaNotFoundException e) {
-            Veiculo expectedCorreto = veiculoService.find(1);
-            //valida se valores continuam iguais
-            assertEquals("Model 3",expectedCorreto.getVeiculo());
-            assertEquals("Tesla",expectedCorreto.getMarca());
-            assertEquals(2021,expectedCorreto.getAno());
-            assertEquals("Carro elétrico da marca Tesla",expectedCorreto.getDescricao());
-            assertEquals(false,expectedCorreto.getVendido());
+            assertEquals("A marca marcaqualquernaoregistrada não foi encontrada, verifique se ela foi digitada corretamente",e.getMessage());
         }
     }
 }

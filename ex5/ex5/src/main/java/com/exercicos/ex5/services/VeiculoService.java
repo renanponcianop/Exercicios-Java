@@ -40,7 +40,6 @@ public class VeiculoService {
     }
 
     public Veiculo insert(Veiculo obj){
-        obj.setId(null);
         validateMarca(obj.getMarca());
         repo.save(obj);
         return find(obj.getId());
